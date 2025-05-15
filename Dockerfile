@@ -1,38 +1,38 @@
-# Stage 1: Build the application using Gradle official image
+# Stage 1: Build the application using Gradle
 FROM gradle:7.6.1-jdk11 AS build
 
 WORKDIR /home/gradle/project
 
-# Copy only necessary files for dependency resolution first
+# Copie des fichiers de configuration nécessaires
 COPY settings.gradle build.gradle gradle.properties version.gradle version.txt ./
-COPY gradle gradle
+COPY gradle ./gradle
 
-# Copy all source code
-COPY axelor-common axelor-common
-COPY axelor-core axelor-core
-COPY axelor-front axelor-front
-COPY axelor-gradle axelor-gradle
-COPY axelor-test axelor-test
-COPY axelor-tomcat axelor-tomcat
-COPY axelor-tools axelor-tools
-COPY axelor-web axelor-web
-COPY buildSrc buildSrc
-COPY changelogs changelogs
-COPY documentation documentation
+# Copie du code source
+COPY axelor-common ./axelor-common
+COPY axelor-core ./axelor-core
+COPY axelor-front ./axelor-front
+COPY axelor-gradle ./axelor-gradle
+COPY axelor-test ./axelor-test
+COPY axelor-tomcat ./axelor-tomcat
+COPY axelor-tools ./axelor-tools
+COPY axelor-web ./axelor-web
+COPY buildSrc ./buildSrc
+COPY changelogs ./changelogs
+COPY documentation ./documentation
 
-# Build the project without running tests
-RUN gradle clean build -x test --no-daemon --stacktrace --warning-mode all
+# Construction de l’application sans exécuter les tests, avec affichage des avertissements
+RUN gradle clean build -x test --no-daemon --warning-mode all
 
-# Stage 2: Create a lightweight image for running the app
+# Stage 2: Image légère pour l'exécution
 FROM openjdk:11-jre-slim
 
 WORKDIR /app
 
-# Copy the built jar from the build stage
+# Copie du fichier JAR généré
 COPY --from=build /home/gradle/project/axelor-core/build/libs/axelor-core.jar ./axelor-core.jar
 
-# Expose the default port (adjust if needed)
+# Exposition du port
 EXPOSE 8080
 
-# Run the application
+# Commande de lancement
 ENTRYPOINT ["java", "-jar", "axelor-core.jar"]
