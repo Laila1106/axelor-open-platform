@@ -1,18 +1,13 @@
-# Use OpenJDK 11 as base image
-FROM openjdk:11-jdk-slim
+# Stage 1: Build the application using Gradle official image
+FROM gradle:7.6.1-jdk11 AS build
 
-# Set working directory inside the container
-WORKDIR /app
+WORKDIR /home/gradle/project
 
-# Copy Gradle wrapper and configuration files
-COPY gradlew .
+# Copy only necessary files for dependency resolution first
+COPY settings.gradle build.gradle gradle.properties version.gradle ./
 COPY gradle gradle
-COPY settings.gradle .
-COPY build.gradle .
-COPY version.gradle .
-COPY gradle.properties .
 
-# Copy all project source code
+# Copy all source code
 COPY axelor-common axelor-common
 COPY axelor-core axelor-core
 COPY axelor-front axelor-front
@@ -25,14 +20,19 @@ COPY buildSrc buildSrc
 COPY changelogs changelogs
 COPY documentation documentation
 
-# Make gradlew executable
-RUN chmod +x gradlew
+# Build the project without running tests
+RUN gradle clean build -x test --no-daemon --stacktrace
 
-# Build the project using Gradle wrapper
-RUN ./gradlew clean build -x test --no-daemon
+# Stage 2: Create a lightweight image for running the app
+FROM openjdk:11-jre-slim
+
+WORKDIR /app
+
+# Copy the built jar from the build stage
+COPY --from=build /home/gradle/project/axelor-core/build/libs/axelor-core.jar ./axelor-core.jar
 
 # Expose the default port (adjust if needed)
 EXPOSE 8080
 
-# Set the entrypoint to run the application
-CMD ["java", "-jar", "axelor-core/build/libs/axelor-core.jar"]
+# Run the application
+ENTRYPOINT ["java", "-jar", "axelor-core.jar"]
