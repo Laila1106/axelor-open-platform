@@ -4,7 +4,7 @@ FROM gradle:7.6.1-jdk11 AS build
 WORKDIR /home/gradle/project
 
 # Copy only necessary files for dependency resolution first
-COPY settings.gradle build.gradle gradle.properties version.gradle ./
+COPY settings.gradle build.gradle gradle.properties version.gradle version.txt ./
 COPY gradle gradle
 
 # Copy all source code
