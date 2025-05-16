@@ -47,7 +47,7 @@ import org.gradle.api.artifacts.component.ComponentIdentifier;
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier;
 import org.gradle.api.artifacts.component.ModuleComponentSelector;
 import org.gradle.api.artifacts.component.ProjectComponentIdentifier;
-import org.gradle.api.internal.tasks.JvmConstants;
+import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.internal.composite.IncludedBuildInternal;
 
 public class AxelorUtils {
@@ -280,8 +280,7 @@ public class AxelorUtils {
   private static void addImplementations(Project project) {
     final boolean useEE = shouldUsePlatformEE(project);
     final String version = VersionUtils.getVersion().version;
-    final String config = JvmConstants.IMPLEMENTATION_CONFIGURATION_NAME;
-
+    final String config = JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME;
     // add core modules
     CORE_MODULES.forEach(module -> addDependency(project, config, module, version, useEE));
 
@@ -293,7 +292,7 @@ public class AxelorUtils {
 
   private static void addTestImplementations(Project project) {
     final String version = VersionUtils.getVersion().version;
-    final String config = JvmConstants.TEST_IMPLEMENTATION_CONFIGURATION_NAME;
+    final String config = JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME;
     TEST_MODULES.forEach(module -> addDependency(project, config, module, version, false));
   }
 
