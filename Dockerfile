@@ -19,10 +19,10 @@ COPY axelor-web ./axelor-web
 COPY buildSrc ./buildSrc
 COPY changelogs ./changelogs
 COPY documentation ./documentation
-
-# Construction de l’application sans exécuter les tests, avec affichage des avertissements
-RUN gradle clean build -x test --no-daemon --warning-mode all
-
+# Nettoyage manuel des dossiers build (souvent résout les erreurs de ZIP corrompu)
+RUN rm -rf /home/gradle/project/**/build
+# Construction de l’application sans exécuter les tests
+RUN gradle clean build -x test --no-daemon --warning-mode all --refresh-dependencies --no-parallel
 # Stage 2: Image légère pour l'exécution
 FROM openjdk:11-jre-slim
 
