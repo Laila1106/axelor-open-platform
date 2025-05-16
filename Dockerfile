@@ -1,25 +1,34 @@
-FROM axelor/aio-builder as builder
+# Étape 1 : Build avec JDK 11
+FROM openjdk:11-jdk-slim AS builder
 
-RUN mkdir -p /app/src
-WORKDIR /app/src
+LABEL maintainer="Laila Belokda <ton-email@example.com>"
 
-RUN \
-  set -ex && \
-  git clone https://github.com/axelor/abs-webapp.git axelor-erp && \
-  sed -e 's|git@github.com:|https://github.com/|' -i axelor-erp/.gitmodules && \
-  cd axelor-erp && \
-  git checkout master && \
-  git submodule sync && \
-  git submodule init && \
-  git submodule update && \
-  git submodule foreach git checkout master && \
-  git submodule foreach git pull origin master && \
-  sed -e 's|^application.theme.*|application.theme = modern|g' -i src/main/resources/application.properties && \
-  ./gradlew --no-daemon -x test npm-build build
+# Installer dépendances
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
 
-FROM axelor/aio-base
-LABEL maintainer="Axelor <support@axelor.com>"
+WORKDIR /app
 
-COPY --from=builder /app/src/axelor-erp/build/libs/axelor-erp-*.war $CATALINA_BASE/webapps/ROOT.war
+# Cloner le code source d’Axelor
+RUN git clone https://github.com/axelor/axelor-open-platform.git
 
-CMD ["start"]
+WORKDIR /app/axelor-open-platform
+
+# Build avec Gradle (sans tests)
+RUN ./gradlew clean build -x test --no-daemon --no-parallel
+
+# Étape 2 : Image finale allégée
+FROM openjdk:11-jre-slim
+
+# Dossier de déploiement
+WORKDIR /opt/axelor
+
+# Copier le WAR généré (si utilisé avec Tomcat ou autre)
+COPY --from=builder /app/axelor-open-platform/build/libs/*.war ./axelor.war
+
+EXPOSE 8080
+
+CMD ["java", "-jar", "axelor.war"]
